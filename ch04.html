@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>just enough math</title>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"> </script>
+    <link rel="stylesheet" type="text/css" href="theme/html/html.css"/>
+  </head>
+  <body data-type="book">
+    <section data-type="chapter" id="idp926048" data-pdf-bookmark="Chapter 4. The Red Pill">
+<h1>The Red Pill</h1>
+
+<p><strong>Topics:</strong> <em>Linear Algebra</em>, <em>Linear Systems</em>, <em>Least Squares</em>, <em>Eigenvalues</em>, <em>Adjacency Matrix</em>, <em>Dimensional Reduction</em>, <em>Low-Order Embedding</em>, <em>Sparse Matrices</em>, <em>Algebraic Graph Theory</em>, <em>Graph Queries</em>, <em>Parallel Processing</em></p>
+
+<blockquote> </blockquote>
+
+<hr/>
+<p>Linear Algebra is a very broad and encompassing subject in mathematics, with quite a <a href="http://jeff560.tripod.com/matrices.html">long history</a>, dating back to <a href="http://it.stlawu.edu/~dmelvill/mesomath/erbiblio.html#Friberg">Babylonian, and possibly Ancient Egyptian</a> sources. It is difficult to find any other part of mathematics that does not rely on linear algebra. Apropos, a Hollywood trope of “the red pill” traces through <a href="http://www.imdb.com/title/tt0133093/">The Matrix</a> (1999), <a href="http://www.imdb.com/title/tt0100802/">Total Recall</a> (1990), and probably originated from a <a href="http://en.wikipedia.org/wiki/We_Can_Remember_It_for_You_Wholesale">Phillip K. Dick story</a> (1966). It signifies both an embrace of reality and a call to action. A mathematician couldn’t ask for better.</p>
+
+<h2>Definitions</h2>
+
+<p>Let’s start with the notion of a <em>vector</em>, which is simply a one-dimensional array of values:</p>
+
+<pre>
+<code>x = [ 2, 3, 1, 0 ]
+</code></pre>
+
+<p>Next, we’ll contrast that with the notion of a <em>scalar</em>, which is simply a value:</p>
+
+<pre>
+<code>a = 3
+</code></pre>
+
+<p>An addition operation performed on a vector and a scalar produces another vector:</p>
+
+<pre data-original-title="" title="">
+<code>a + x = [ 3 + 2, 3 + 3, 3 + 1, 3 + 0 ] = [ 5, 6, 4, 3 ]
+</code></pre>
+
+<p>Or we might do a multiplication to produce another vector:</p>
+
+<pre>
+<code>b = 2
+b * x = [ 2 * 2, 2 * 3, 2 * 1, 2 * 0 ] = [ 4, 6, 2, 0 ]
+</code></pre>
+
+<p>Or we could add two vectors together to produce another vector:</p>
+
+<pre>
+<code>y = [ 5, 1, 5, 0 ]
+x + y = [ 2 + 5, 3 + 1, 1 + 5, 0 + 0 ] = [ 7, 4, 6, 0 ]
+</code></pre>
+
+<p>Recall from the basic definitions in abstract algebra:</p>
+
+<blockquote>
+<p><em>ring</em> – semigroup with two binary associative operations, addition and multiplication</p>
+</blockquote>
+
+<p>The closure property is here – gotcha, and there are binary associative operations for addition and multiplication – gotcha. This is familiar turf. Check out the definition of an <a href="http://empg.maths.ed.ac.uk/xmlearning/lecture_notes/vector_spaces/abstract_vector_spaces/abstract_vector_spaces.php">abstract vector space</a>, which begins to bridge between abstract algebra and linear algebra.</p>
+
+<p>Let’s push beyond that – let’s multiply two vectors. There are a couple ways to do that. First, we can use a <em>dot product</em>, sometimes called an <em>inner product</em>, to produce a scalar:</p>
+
+<pre>
+<code>x = [ 2, 3, 1, 0 ]
+y = [ 5, 1, 5, 0 ]
+x ･ y = (2 * 5) + (3 * 1) + (1 * 5) + (0 * 0) = 10 + 3 + 5 + 0 = 18
+</code></pre>
+
+<p>In Python, we can use the <code>linalg</code> package in <a href="http://docs.scipy.org/doc/numpy/reference/routines.linalg.html">NumPy</a> to perform a dot product – using combinations of both vectors and scalars:</p>
+
+<pre>
+<code>&gt;&gt;&gt; import numpy.linalg as np
+&gt;&gt;&gt; x = [ 2, 3, 1, 0 ]
+&gt;&gt;&gt; y = [ 5, 1, 5, 0 ]
+&gt;&gt;&gt; np.dot(x, y)
+18
+
+&gt;&gt;&gt; a = 3
+&gt;&gt;&gt; b = 2
+&gt;&gt;&gt; np.dot(a, b)
+6
+
+&gt;&gt;&gt; np.dot(b, x)
+array([4, 6, 2, 0])
+</code></pre>
+
+<p>Next, let’s consider the notion of a <em>matrix</em> – not the blockbuster movie franchise, but the thing that was a spreadsheet long before spreadsheets became <a href="http://apple2history.org/history/ah18/#07">Apple II software</a>. We’ll define a matrix <strong>A</strong> as:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>1</td>
+			<td>2</td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td>4</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Then another matrix <strong>B</strong> as:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>5</td>
+			<td>6</td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td>8</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>In Python, we can “reshape” an array into a matrix, then perform matrix addition and other operations:</p>
+
+<pre>
+<code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; A = np.array([1, 2, 3, 4]).reshape(2, 2)
+&gt;&gt;&gt; A
+array([[1, 2],
+       [3, 4]])
+
+&gt;&gt;&gt; B = np.array([5, 6, 7, 8]).reshape(2, 2)
+
+&gt;&gt;&gt; np.add(A, B)
+array([[ 6,  8],
+       [10, 12]])
+</code></pre>
+
+<p>Pretty much all of this code shown in Python can be done in Scala using the <a href="https://github.com/twitter/scalding/wiki/Matrix-API-Reference">Matrix API</a> from Twitter – with the added benefit of getting to apply the monoids, etc., from the earlier chapter. Python is simpler to show in small examples, so we’ll stick with that.</p>
+
+<blockquote> </blockquote>
+
+<p>Now let’s introduce some notation to reference the elements in matrix <strong>A</strong>:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>A<sub>11</sub></td>
+			<td>A<sub>12</sub></td>
+		</tr>
+		<tr>
+			<td>A<sub>21</sub></td>
+			<td>A<sub>22</sub></td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Given our definition of the values in matrix <strong>A</strong> and matrix <strong>B</strong> above, that’s another way of stating that A<sub>11</sub> = 1, A<sub>12</sub> = 2, A<sub>21</sub> = 3, A<sub>22</sub> = 4, as well as B<sub>11</sub> = 5, B<sub>12</sub> = 6, B<sub>21</sub> = 7, B<sub>22</sub> = 8 … just in a much more compact form.</p>
+
+<p>We can use a similar notation for vectors:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>x<sub>11</sub></td>
+			<td>x<sub>12</sub></td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Given a new definition of the values in vector <strong>x</strong> = [ 2, 3 ], that’s another way of stating: x<sub>1</sub> = 2, x<sub>2</sub> = 3, just in a much more compact form.</p>
+
+<p>We can multiply matrix <strong>A</strong> and vector <strong>x</strong>, stated as <strong>Ax</strong>, based on using a sequence of dot products for each of the elements in the resulting matrix:</p>
+
+<p>[ [ A<sub>11</sub>, A<sub>12</sub> ] ･ [ x<sub>1</sub>, x<sub>2</sub> ] , [ A<sub>21</sub>, A<sub>22</sub> ] ･ [ x<sub>1</sub>, x<sub>2</sub> ] ]<br/>
+= [ (A<sub>11</sub> * x<sub>1</sub> + A<sub>12</sub> * x<sub>2</sub>), (A<sub>21</sub> * x<sub>1</sub> + A<sub>22</sub> * x<sub>2</sub>) ]</p>
+
+<p>Using our example:</p>
+
+<p>[ [ 1, 2 ] ･ [ 2, 3 ] , [ 3, 4 ] ･ [ 2, 3 ] ]<br/>
+= [ (1 * 2 + 2 * 3), (3 * 2 + 4 * 3) ]<br/>
+= [ 2 + 6, 6 + 12 ]<br/>
+= [ 8, 18 ]</p>
+
+<p>In other words, we could solve for an equation <strong>Ax</strong> = <strong>y</strong>, where <strong>y</strong> = [ 8, 18 ] in this case. Using the NumPy package in Python:</p>
+
+<pre>
+<code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; A = np.array([1, 2, 3, 4]).reshape(2, 2)
+&gt;&gt;&gt; x = [2, 3]
+&gt;&gt;&gt; np.dot(A, x)
+array([8, 18])
+</code></pre>
+
+<p>Extending this notion, we can multiply matrix <strong>A</strong> and matrix <strong>B</strong>. To perform that operation in Python:</p>
+
+<pre data-original-title="" title="">
+<code>&gt;&gt;&gt; A = np.array([1, 2, 3, 4]).reshape(2, 2)
+&gt;&gt;&gt; B = np.array([5, 6, 7, 8]).reshape(2, 2)
+&gt;&gt;&gt; np.dot(A, B)
+array([[19, 22],
+       [43, 50]])
+</code></pre>
+
+<p>Recall the definition of a <em>monoid</em> as a <em>semigroup</em> with a unique identity element. We define an <em>identity matrix</em> <strong>I</strong>, which has the value <code>1</code> in the diagonal and <code>0</code> for all other elements:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>1</td>
+			<td>0</td>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>1</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>We can use this for matrix multiplication, such that <strong>AI</strong> = <strong>A</strong>:</p>
+
+<pre data-original-title="" title="">
+<code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; A = np.array([1, 2, 3, 4]).reshape(2, 2)
+&gt;&gt;&gt; I = np.array([1, 0, 0, 1]).reshape(2, 2)
+&gt;&gt;&gt; np.dot(A, I)
+array([[1, 2],
+       [3, 4]])
+</code></pre>
+
+<p>One more definition before moving back into reality… We denote the <em>determinant</em> of a matrix <strong>A</strong> as <em>det</em>(<strong>A</strong>) or |<strong>A</strong>|, which gets used in many different ways. Referencing the elements in matrix <strong>A</strong>:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>A<sub>11</sub></td>
+			<td>A<sub>12</sub></td>
+		</tr>
+		<tr>
+			<td>A<sub>21</sub></td>
+			<td>A<sub>22</sub></td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Then <em>det</em>(<strong>A</strong>) is defined as A<sub>11</sub> * A<sub>22</sub> - A<sub>12</sub> * A<sub>21</sub>, and using the values we defined earlier:</p>
+
+<p>A<sub>11</sub> * A<sub>22</sub> - A<sub>12</sub> * A<sub>21</sub><br/>
+= 1 * 4 - 2 * 3<br/>
+= 4 - 6<br/>
+= –2</p>
+
+<p>Using the NumPy package in Python:</p>
+
+<pre>
+<code>&gt;&gt;&gt; np.linalg.det(A)
+-2.0
+</code></pre>
+
+<h2>Linear Systems</h2>
+
+<p>Back to the red pill, and our call to action to embrace reality… let’s put some linear algebra into practice.</p>
+
+<p>Suppose we define a function <code>f(x)</code>, where:</p>
+
+<pre>
+<code>f(x) = x + 9
+f(2) = 2 + 9 = 11
+f(21) = 21 + 9 = 23
+</code></pre>
+
+<p>Great. Now let’s apply this to a vector <strong>x</strong>, where:</p>
+
+<pre data-original-title="" title="">
+<code>x = [ 2, 3 ]
+f(x) = [ f(2), f(3) ] = [ 2 + 9, 3 + 9 ] = [ 11, 12 ]
+</code></pre>
+
+<p>Bokay, now we’re applying a function to a vector. That could probably come in quite handy for parallel processing at scale. Or something. Moreover, we could do much the same to a matrix.</p>
+
+<p>Next, let’s take a look at a common problem in algebra – solving for two equations and two unknowns:</p>
+
+<p>3 x<sub>1</sub> + 9 x<sub>2</sub> = 5<br/>
+4 x<sub>1</sub> + 8 x<sub>2</sub> = 12</p>
+
+<p>Substituting for x<sub>1</sub>, we can rearrange one of these equations to simplify the problem:</p>
+
+<p>4 x<sub>1</sub> + 8 x<sub>2</sub> = 12<br/>
+x<sub>1</sub> + 2 x<sub>2</sub> = 3<br/>
+x<sub>1</sub> = –2 x<sub>2</sub> + 3</p>
+
+<p>Then:</p>
+
+<p>3 x<sub>1</sub> + 9 x<sub>2</sub> = 5<br/>
+3 * (–2 x<sub>2</sub> + 3) + 9 x<sub>2</sub> = 5<br/>
+–6 x<sub>2</sub> + 9 + 9 x<sub>2</sub> = 5<br/>
+(9 - 6) x<sub>2</sub> = 5 - 9<br/>
+3 x<sub>2</sub> = –4<br/>
+x<sub>2</sub> = –4/3</p>
+
+<p>Now, substituting this known variable to solve for the remaining unknown variable:</p>
+
+<p>x<sub>2</sub> = –4/3<br/>
+x<sub>1</sub> = –2 x<sub>2</sub> + 3<br/>
+x<sub>1</sub> = (–2 * –4/3) + 3 = 8/3 + 3 = 5 2/3</p>
+
+<p>Be sure to check our math:</p>
+
+<p>(3 * 5 2/3) + (9 * –4/3) = 17 - 12 = 5<br/>
+(4 * 5 2/3) + (8 * –4/3) = 22 2/3 - 10 2/3 = 12</p>
+
+<p>Good, that worked. What a relief. Generally speaking, if we have <em>N</em> equations and <em>N</em> variables, we can solve for that <em>system of equations</em>. When we have more or less than <em>N</em> equations, life becomes interesting. In any case, we can use linear algebra to make this a bit simpler. The same problem could have been stated as one equation <strong>Ax</strong> = <strong>y</strong>, where the matrix <strong>A</strong> is:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>3</td>
+			<td>9</td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td>8</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>and <strong>y</strong> = [ 5, 12 ], and then we just need to solve for one variable, vector <strong>x</strong>. Given the equation <strong>Ax</strong> = <strong>y</strong>, how about if we simply divide by <strong>A</strong> to get the answer? Rather than divide by <strong>A</strong>, we must multiply both sides of the equation by its <a href="http://mathworld.wolfram.com/MatrixInverse.html">matrix inverse</a>. That is denoted as <strong>A</strong><sup>–1</sup>, such that <strong>AA</strong><sup>–1</sup> = <strong>I</strong> holds.</p>
+
+<p>Finding the matrix inverse can be tricky business. In general, to find <strong>A</strong><sup>–1</sup> we take the rearranged elements of <strong>A</strong>:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>A<sub>22</sub></td>
+			<td>-A<sub>12</sub></td>
+		</tr>
+		<tr>
+			<td>A<sub>-21</sub></td>
+			<td>A<sub>11</sub></td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Then we divide by the determinant <em>det</em>(<strong>A</strong>), which is a scalar. Using the value for matrix <strong>A</strong> given in our system of equations, the rearranged elements become:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>8</td>
+			<td>-9</td>
+		</tr>
+		<tr>
+			<td>-4</td>
+			<td>3</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Then dividing by the determinant <em>det</em>(<strong>A</strong>) = –12, we get:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>-2/3</td>
+			<td>3/4</td>
+		</tr>
+		<tr>
+			<td>1/3</td>
+			<td>-1/4</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Using the NumPy package in Python is a much simpler way to find <strong>A</strong><sup>–1</sup> and solve for <strong>x</strong>:</p>
+
+<pre data-original-title="" title="">
+<code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; A = np.array([3, 9, 4, 8]).reshape(2, 2)
+&gt;&gt;&gt; np.linalg.det(A)
+-12.0
+
+&gt;&gt;&gt; invA = np.linalg.inv(A)
+&gt;&gt;&gt; invA
+array([[-0.66666667,  0.75],
+       [0.33333333, -0.25]])
+
+&gt;&gt;&gt; y = [ 5, 12 ]
+&gt;&gt;&gt; np.dot(invA, y)
+array([5.66666667, -1.33333333])
+</code></pre>
+
+<p>That looks right. Frankly, this a small example. These kinds of <a href="http://www.numbertheory.org/book/cha1.pdf">linear systems</a> in practice may grow to be very, very large. Finding a matrix inverse in those cases can be quite costly and can become problematic in other ways – especially for approximations, which sometimes are the only feasible approach at scale. So we try to find ways of performing the math without calculating an inverse. More about that in a bit.</p>
+
+<h2>Least Squares Approximation</h2>
+
+<p>Recall that when we have more or less than <em>N</em> equations with <em>N</em> variables, life becomes interesting. We will consider both cases in this chapter, but let’s start with the <em>more</em> case.</p>
+
+<p>Imagine that we have many points <code>(x, y)</code> on a 2-D grid. We could use linear algebra to describe a line that runs through those points. The general formula of a line is <code>y = mx + c</code>, with some scalar values <code>m</code> and <code>c</code> as the slope and intercept of the line, respectively. If all the points are aligned, it should be no problem solving for those values, and we’ll get an exact solution.</p>
+
+<p>However, if all the points are not aligned – and worse yet if there are too many of them, i.e., more equations than variables – there won’t be an exact solution, but we can approximate. In the case of a 2-D grid, any more than two points can cause this condition. The solution involves <em>curve fitting</em>, and <em>least squares approximation</em> was introduced for by <a href="http://jeff560.tripod.com/m.html">Gauss</a> in the early 19th century. Check out the discussion about <a data-original-title="" href="http://math.mit.edu/linearalgebra/ila0403.pdf" title="">least squares approximation</a> by Gilbert Strang, in the book <em>Introduction to Linear Algebra</em>.</p>
+
+<p>Let’s say that our list of <code>(x, y)</code> points to be fitted is:</p>
+
+<pre data-original-title="" title="">
+<code>(0, -1), (1, 0.2), (2, 0.9), (3, 2.1)
+</code></pre>
+
+<p>We define the vector <strong>x</strong><sup>T</sup> = [m, c] to solve for the line parameters. We construct the matrix <strong>A</strong> with all the points’ <code>x</code> values in the first column, and the value <code>1</code> in the second column:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>0</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td>1</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Then we define the vector <strong>y</strong> with the points’ <code>y</code> values = [–1, 0.2, 0.9, 2.1], and now we can solve for the equation <strong>Ax</strong> = <strong>y</strong>. Since matrix <strong>A</strong> is not square, we cannot obtain a matrix inverse.</p>
+
+<p>Instead we use a <a href="http://mathworld.wolfram.com/Transpose.html">transpose</a> of matrix <strong>A</strong>, denoted at <strong>A</strong><sup>T</sup>, where the elements get reflected along the diagonal:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>A<sub>11</sub></td>
+			<td>A<sub>21</sub></td>
+		</tr>
+		<tr>
+			<td>A<sub>12</sub></td>
+			<td>A<sub>22</sub></td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Note that (<strong>A</strong><sup>T</sup>)<sup>T</sup> = <strong>A</strong> holds, and moreover the transpose works fine even when the matrix is not square.</p>
+
+<p>Next, we multiply both sides of <strong>Ax</strong> = <strong>y</strong> by <strong>A</strong><sup>T</sup>, then approximate <strong>x</strong> in the resulting <strong>A</strong><sup>T</sup><strong>Ax</strong> = <strong>A</strong><sup>T</sup><strong>y</strong> equation. To approximate <strong>x</strong>, we split the vector into two parts: a projection <strong>p</strong> = [ m, c ] as the solution, and a vector of errors <strong>e</strong>. Then we minimize <strong>e</strong> as best as possible by minimizing the squares of its values, ergo the “least squares” name.</p>
+
+<p>Using the <a data-original-title="" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.lstsq.html" title="">linalg.lstsq</a> method in NumPy:</p>
+
+<pre data-original-title="" title="">
+<code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; x = np.array([0, 1, 2, 3])
+&gt;&gt;&gt; y = np.array([-1, 0.2, 0.9, 2.1])
+&gt;&gt;&gt; A = np.vstack([x, np.ones(len(x))]).T
+&gt;&gt;&gt; A
+array([[0.,  1.],
+       [1.,  1.],
+       [2.,  1.],
+       [3.,  1.]])
+&gt;&gt;&gt; m, c = np.linalg.lstsq(A, y)[0]
+&gt;&gt;&gt; m, c
+(1.0, -0.95)
+</code></pre>
+
+<p>Bueno. The fitted line is <code>y = x - 0.95</code> and we are off to the races.</p>
+
+<p>In the case where we have less than <em>N</em> equations with <em>N</em> variables, that gets into an area called <em>linear programming</em>. More about that in a later chapter.</p>
+
+<h2>Eigensomethingorother</h2>
+
+<p>Something something <em>linear</em>, something something <em>eigen</em>… As the effects of the red pill begin to ramp up, let’s take a good look at the notion of <em>eigenvalues</em> and <em>eigenvectors</em>. Those seem to pop up all over linear algebra.</p>
+
+<p>Suppose we have a square matrix <strong>A</strong>, a non-zero vector <strong>x</strong>, and some scalar λ, such that <strong>Ax</strong> = λ<strong>x</strong> holds. The vector <strong>x</strong> is called an <em>eigenvector</em> of <strong>A</strong>. The scalar λ is called an <em>eigenvalue</em> of <strong>A</strong>. There may be multiple solutions for λ and <strong>x</strong>, and we’ll get to that. <a href="http://www.numbertheory.org/book/cha6.pdf">Matthews</a> and <a href="http://math.mit.edu/linearalgebra/ila0601.pdf">Strang</a> both provide lots of discussion about these matrix properties, albeit arriving in a roundabout way.</p>
+
+<p>Let’s take a more direct route:</p>
+
+<p><strong>Ax</strong> = λ<strong>x</strong><br/>
+<strong>Ax</strong> - λ<strong>x</strong> = 0<br/>
+<strong>Ax</strong> - λ<strong>Ix</strong> = 0<br/>
+(<strong>A</strong> - λ<strong>I</strong>)<strong>x</strong> = 0<br/>
+<em>det</em>(<strong>A</strong> - λ<strong>I</strong>) = 0</p>
+
+<p>Looking at the second-to-last equation, remember that <strong>x</strong> must be non-zero. So we will be able to solve for the determinant.</p>
+
+<p>Consider a matrix <strong>A</strong> defined as:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>0</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>-2</td>
+			<td>-3</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>The corresponding λ<strong>I</strong> is:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>λ</td>
+			<td>0</td>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>λ</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Then <strong>A</strong> - λ<strong>I</strong> becomes:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>0 - λ</td>
+			<td>1 - 0</td>
+		</tr>
+		<tr>
+			<td>-2 - 0</td>
+			<td>-3 - λ</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>The determinant <em>det</em>(<strong>A</strong> - λ<strong>I</strong>) can be defined as λ<sup>2</sup> + 3λ + 2, called the <a href="http://mathworld.wolfram.com/CharacteristicPolynomial.html">characteristic polynomial</a> of <strong>A</strong>. Solving for the roots of that polynomial:</p>
+
+<p>λ<sup>2</sup> + 3λ + 2 = 0<br/>
+(λ+ 1) * (λ + 2) = 0<br/>
+λ<sub>1</sub> = –1, λ<sub>2</sub> = –2</p>
+
+<p>Using the <a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.eig.html#numpy.linalg.eig">linalg.eig</a> method in NumPy:</p>
+
+<pre>
+<code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; A = np.array([0, 1, -2, -3]).reshape(2, 2)
+&gt;&gt;&gt; np.linalg.eig(A)
+(array([-1., -2.]), array([[0.70710678, -0.4472136],
+    [-0.70710678,  0.89442719]]))
+</code></pre>
+
+<p>In other words, the eigenvectors <code>[0.70710678, -0.4472136]</code> and <code>[-0.70710678, 0.89442719]</code> correspond to the eigenvalues λ<sub>1</sub> = –1 and λ<sub>2</sub> = –2 for matrix <strong>A</strong>.</p>
+
+<blockquote> </blockquote>
+
+<p>How do we use eigenvalues and eigenvectors? Oh, in so many ways! Let’s start with the notion of matrix <em>decomposition</em>, for example used in <a href="http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">principal component analysis</a> (PCA).</p>
+
+<p>Recall the <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.156.4933&amp;rep=rep1&amp;type=pdf">Breiman paper</a> in the previous chapter, where many input <strong>x</strong>’s go into a “black box” for algorithmic modeling. One issue that we grapple with continually in machine learning is <em>dimensional reduction</em>. In other words, modeling with 1000 different <strong>x</strong>’s may become a problem – performance costs come to mind – while, say, 20 <strong>v</strong>’s could work just fine.</p>
+
+<p>We can use eigenvectors in the PCA calculations. Visualize a high-dimensional space, with all of those 1000 different <strong>x</strong>’s – essentially looking at a “cloud” of data points that compares their <em>covariance</em>. We fit a straight line through that cloud of points, as best as possible. Oh, here’s an idea… how about we use a <em>least squares approximation</em> to solve that? Great. The resulting line defines an eigenvector, which we will call the first <em>principal component</em> in this context. Elements of that eigenvector become the coefficients for a polynomial of the 1000 different <strong>x</strong>’s – so we get an equation. That equation becomes one of the <strong>v</strong>’s, as a kind of synthesized variable.</p>
+
+<p>We peel off the eigenvector from the high-dimensional cloud that we’ve been visualizing, then apply the least squares trick again. Great, we’ve got another polynomial as a synthesized variable – as the second principal component. Rinse, lather, repeat. After 20 iterations we have 20 principal components. Each of those reduces the 1000 different <strong>x</strong>’s (high dimension) into 20 different <strong>v</strong>’s (low dimension). Ergo the name, dimensional reduction. There are many variants, and frankly <a href="http://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html">clustering algorithms</a> do pretty much the same trick, just in a different way.</p>
+
+<blockquote> </blockquote>
+
+<p>Eigenvalues are also great for approximating derivatives (Calculus) and for methods to avoid costly matrix operations. For example, suppose you really needed to find the value of <strong>A</strong><sup>N</sup><strong>x</strong> for a large matrix? We can wager safely that finding λ<strong>x</strong> then calculating λ<sup>N</sup><strong>x</strong> would be a whole lot quicker. In the context of large social graphs, as the matrix elements become numbered in the trillions, that performance issue becomes especially poignant.</p>
+
+<h2>Graph Theory</h2>
+
+<p>Let’s talk a bit about graphs… Graphs are composed of <em>vertices</em> (the nodes in the graph) and <em>edges</em> (the arcs between nodes). We can construct a special kind of matrix, called an <em>adjacency matrix</em>, which has a row for each vertex and a column for each vertex. The elements of an adjacency matrix have a <code>1</code> if an edge exists between the respective pair of vertices, and a <code>0</code> otherwise.</p>
+
+<blockquote> </blockquote>
+
+<p>Check out <a href="http://buzzard.ups.edu/talks/beezer-2009-pacific-agt.pdf">An Introduction to Algebraic Graph Theory</a> by Rob Beezer, starting on slide 9. There are four vertices in the graph <code>[u, v, w, x]</code> and an adjacency matrix defined as:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>0</td>
+			<td>1</td>
+			<td>0</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>0</td>
+			<td>1</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>1</td>
+			<td>0</td>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>1</td>
+			<td>1</td>
+			<td>0</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>An adjacency matrix has certain properties. For example, we know that it is symmetric <strong>A</strong> = <strong>A</strong><sup>T</sup> and that it has real eigenvalues.</p>
+
+<p>Using the <code>eig</code> method in NumPy:</p>
+
+<pre>
+<code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; A = np.array([0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1]).reshape(4, 4)
+&gt;&gt;&gt; A
+array([[0, 1, 0, 1],
+       [1, 0, 1, 1],
+       [0, 1, 0, 1],
+       [1, 1, 0, 1]])
+
+&gt;&gt;&gt; np.linalg.eig(A)
+(array([2.65109341, -1.37720285, -0.27389055, 0.]),
+array([[-4.25648128e-01, -4.56381963e-01, -2.61003301e-01, 4.53246652e-17],
+    [-5.42229129e-01, 7.53529250e-01, -6.20457793e-01, -5.77350269e-01],
+    [-4.25648128e-01, -4.56381963e-01, -2.61003301e-01, -5.77350269e-01],
+    [-5.86203816e-01, -1.24998709e-01, 6.91944132e-01, 5.77350269e-01]]))
+</code></pre>
+
+<p>Great, we can haz eigenvalues. Keep in mind that the eigenvalues do not define the graphs – different graphs could have the same eigenvalues. Even so, we can put those eigenvalues to good use in measuring graphs. For example, a <a href="http://mathworld.wolfram.com/GraphDiameter.html">graph diameter</a> is defined as the “longest shortest path” – in other words, the max number of vertices which must be traversed to go from one vertex to another when paths do not backtrack. A graph of diameter <code>d</code> has <code>d + 1</code> distinct eigenvalues.</p>
+
+<p>There are many more was to leverage eigenvalues, but the point for now is that we’ve built bridges between abstract algebra and linear algebra, and then bridges between linear algebra and graph theory.</p>
+
+<h2>Sparsity</h2>
+
+<p>Here’s a tip: check out work by David Gleich, an assistant professor at Purdue – in particular, his <a href="http://www.cs.purdue.edu/homes/dgleich/">homepage</a> and <a href="http://www.slideshare.net/dgleich/">many presentations on SlideShare</a>. If you take away merely two key points from <strong>Just For Math</strong>, one is to study what’s going on in <a href="https://github.com/twitter/summingbird/wiki">Summingbird</a> and the other is to keep an eye open for presentations by Gleich.</p>
+
+<p>In particular, some of those <a href="http://www.slideshare.net/dgleich/tag/pagerank">slide decks about PageRank</a> provide excellent examples of where linear algebra and graph theory intersect. <a href="http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1&amp;Sect2=HITOFF&amp;d=PALL&amp;p=1&amp;u=%2Fnetahtml%2FPTO%2Fsrchnum.htm&amp;r=1&amp;f=G&amp;l=50&amp;s1=6,285,999.PN.&amp;OS=PN/6,285,999&amp;RS=PN/6,285,999">PageRank</a> is a graph algorithm at the core of Google search:</p>
+
+<blockquote>
+<p>A search engine employing a ranking method of the present invention provides automation while producing results comparable to a human maintained categorized system. In this approach, a web crawler explores the web and creates an index of the web content, as well as a directed graph of nodes corresponding to the structure of hyperlinks. The nodes of the graph (i.e. pages of the web) are then ranked according to importance as described above in connection with various exemplary embodiments of the present invention.</p>
+</blockquote>
+
+<p>We’ll go into more detail in a bit, but the point for now is that PageRank makes highly effective use of <a href="http://en.wikipedia.org/wiki/PageRank#Power_Method">eigenvalues and an adjacency matrix</a> for its graph of links.</p>
+
+<blockquote> </blockquote>
+
+<p>Back to the “red pill” and David Gleich’s presentations, check out <a href="http://www.slideshare.net/dgleich/whatyoucandowithtsqrfactorization">What You Can Do With QR Factorization on Hadoop</a>. Assuming that one knows some Python, a bit about MapReduce, plus some linear algebra – which is a fair assumption for this audience – this presentation introduces the notion of <em>tall and skinny</em> matrices, and how to leverage them. Tall and skinny is a way to describe a matrix that has many, many rows but not so many columns. For example, suppose you have a few million customers and maybe 100 data points on each – except that for many customers some of the data is missing. With one row per customer, that matrix becomes (1) tall and skinny and (2) sparse. What a great way to describe the data at oh so many many tech start-ups.</p>
+
+<p>We probably want to leverage that data, and it’s probably large enough that computation becomes difficult. Some example uses would be recommender systems, anti-fraud, advertising, etc. In that case, one approach is to use <a href="http://en.wikipedia.org/wiki/QR_decomposition">QR factorization</a>, which is another kind of decomposition. We say that a matrix <strong>A</strong> = <strong>QR</strong>, then we decompose <strong>Q</strong> and <strong>R</strong>.</p>
+
+<p>Fortunately, the matrix <strong>A</strong> can be partitioned into chunks, so the problem can be parallelized – for example, on Hadoop. <a href="http://www.slideshare.net/dgleich/whatyoucandowithtsqrfactorization">Slides 13–30</a> shows how the parallelized calculations work, using NumPy.</p>
+
+<p>One of the benefits of this approach is that its results get appended together at the end – the chunks get reassembled without post-processing required. Often times in MapReduce apps, early stages can be parallelized, but the results get lumped into one big reduce at the end which takes forever to complete. QR factorization avoids that. There is a full <a href="https://github.com/arbenson/mrtsqr">Python implementation</a> by Austin Benson @Stanford, and a <a href="https://github.com/ccsevers/scalding-linalg">Scala implementation</a> by Chris Severs @eBay.</p>
+
+<p>What are some use cases for QR factorization? Those include:</p>
+
+<ul>
+	<li>regression when there are large samples</li>
+	<li><a href="http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">principal component analysis</a> (PCA)</li>
+	<li><a href="http://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html">K-means clustering</a></li>
+	<li><a href="http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.TruncatedSVD.html">singular value decomposition</a> (SVD)</li>
+</ul>
+
+<p>…translated: image processing, recommender systems, anti-fraud, advertising, energy optimization, supply chain, agriculture, transportation, finance, etc. Just to name a few.</p>
+
+<blockquote> </blockquote>
+
+<p>We could keep going about different sparse matrix categories and their use cases, and how that greatly improves parallelization of important algorithms at scale. Check the slides. For now, let’s close this section with a look at the <a href="http://www.cise.ufl.edu/research/sparse/matrices/">University of Florida Sparse Matrix Collection</a>, for example:</p>
+
+<p><a href="http://www.cise.ufl.edu/research/sparse/matrices/GHS_psdef/ford2.html"><img alt="sparse matrix visualization: GHS_psdef/ford2, car surface mesh" src="http://www.research.att.com/~yifanhu/GALLERY/GRAPHS/GIF_SMALL/GHS_psdef@ford2.gif"/></a></p>
+
+<p>One of the curators, <a href="http://www.cise.ufl.edu/~davis/welcome.html">Tim Davis</a>, is a renowned authority on sparse matrix algorithms. As you begin to use some of the popular numerical packages for linear algebra, well, Davis wrote many of them. Not only is the <em>Sparse Matrix Collection</em> beautiful to view, it’s immensely practical as well: these become test cases for algorithm development and testing.</p>
+
+<h2>Deconstructing Google Search</h2>
+
+<p>Let’s go back to the PageRank algorithm, taking a look at <a href="http://www.math.cornell.edu/~mec/Winter2009/RalucaRemus/Lecture3/lecture3.html">The Mathematics of Google Search</a> by Raluca Tanase and Remus Radu @Cornell. Note their link graph, and also <strong>A</strong> as a transition matrix for that graph. This is similar to an adjacency matrix, except that the edges have weights. Those weights replace the <code>1</code> and <code>0</code> values for the matrix elements:</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<td>0</td>
+			<td>0</td>
+			<td>1</td>
+			<td>1/2</td>
+		</tr>
+		<tr>
+			<td>1/3</td>
+			<td>0</td>
+			<td>0</td>
+			<td>0</td>
+		</tr>
+		<tr>
+			<td>1/3</td>
+			<td>1/2</td>
+			<td>0</td>
+			<td>1/2</td>
+		</tr>
+		<tr>
+			<td>1/3</td>
+			<td>1/2</td>
+			<td>0</td>
+			<td>0</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>The way that PageRank works is to define an equation <strong>A</strong><sup>N</sup><strong>v</strong> = <strong>v</strong>, then find the eigenvector where the eigenvalue = 1, and that eigenvector represents the ranks for each web page. The max element in that eigenvector is the top-ranked page. We iterate <em>N</em> times, until the system reaches equilibrium – in other words, until the values in the eigenvector stop changing appreciably.</p>
+
+<p>There is more to PageRank (e.g, the <em>damping factor</em>), and there are <a href="http://en.wikipedia.org/wiki/PageRank#Power_Method">more optimal ways</a> to calculate PageRank, which in turn make even more use of eigenvalues. But the point is clear: linear algebra, FTW.</p>
+
+<h2>Graph Queries</h2>
+
+<p>One final note… <a href="https://github.com/thinkaurelius/titan">Titan</a> is a graph query engine (and much, much more) running atop <a href="http://cassandra.apache.org/">Apache Cassandra</a>, <a href="http://hbase.apache.org/">Apache HBase</a>, <a href="http://www.oracle.com/technetwork/database/berkeleydb/overview/index-093405.html">BerkeleyDB</a>, etc. Hands down, this represents the most robust, optimal, and feature rich among the various open source graph query engines.</p>
+
+<p>Check out the <a href="https://github.com/thinkaurelius/titan/wiki/Getting-Started">Getting Started with Titan</a> tutorial for a step-by-step introduction. That’s one of the best introductions available for graph theory in practice.</p>
+
+<blockquote> </blockquote>
+
+<hr/>
+<h2>Key Points</h2>
+
+<p><strong>TODO</strong></p>
+
+<ul>
+	<li>real-world problems: represented as graphs, then computed as sparse matrices, then leverage abstract algebra for parallelism</li>
+	<li>linear algebra – e.g., calculating algorithms for large-scale apps efficiently</li>
+	<li>graph theory – e.g., representation of problems in a calculable language</li>
+</ul>
+
+<h2>Suggested Books</h2>
+
+<p><em>Elementary Linear Algebra</em><br/>
+by Keith Matthews (1991)<br/>
+http://www.numbertheory.org/book/</p>
+
+<p><em>Introduction to Linear Algebra</em><br/>
+by Gilbert Strang (2009)<br/>
+http://www.amazon.com/dp/0980232716</p>
+
+<p><em>Algebraic Graph Theory</em><br/>
+by Norman Biggs (1974)<br/>
+http://amazon.com/dp/0521458978</p>
+
+<h2>Exercises</h2>
+
+<p><b>TODO</b></p>
+</section>
+  </body>
+</html>

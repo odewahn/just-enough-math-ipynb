@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>just enough math</title>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"> </script>
+    <link rel="stylesheet" type="text/css" href="theme/html/html.css"/>
+  </head>
+  <body data-type="book">
+    <section data-type="chapter" id="idm165920" data-pdf-bookmark="Chapter 3. Lies, Damn Lies, Statistics, and Bayesian Statistics">
+<h1>Lies, Damn Lies, Statistics, and Bayesian Statistics</h1>
+
+<p><strong>Topics:</strong> <em>Algorithmic Modeling</em>, <em>Bayesian Statistics</em>, <em>Point Estimates</em>, <em>Regularization</em></p>
+
+<hr/>
+<p>The Latin phrase <em>ceteris paribus</em> translates into English as “all other things being equal.” That notion gets invoked in decision making in terms of <em>isolation</em>. We might assume that other factors are fixed while considering a particular item, or that they change so slowly that they appear constant at any point, or that they will not be affected by the item being considered.</p>
+
+<p>Some practices in the field of Statistics have historically approached data modeling problems in much the same way. Isolate a phenomenon within the data – enough to draw analogies to some known and rigorously proven mathematical function, generally based on a <em>probability distribution</em>. Next, claim that other factors are constant with respect to your hypothesis, or with respect to changes over time, or even with respect to your measuring process. Then draw conclusions. It’s somewhat appalling, but a vast number of ad-tech start-ups operate this way.</p>
+
+<p>Back in the good ole days, when a computer might take up most of an entire room, we were taught to employ an approach called <em>data modeling</em>:</p>
+
+<ol>
+	<li>
+	<p>prepare a sample of the data</p>
+	</li>
+	<li>
+	<p>fit the sample to a <a href="http://en.wikipedia.org/wiki/Probability_density_function">known distribution</a></p>
+	</li>
+	<li>
+	<p>perform significance testing to show how well that distribution fits</p>
+	</li>
+	<li>
+	<p>throw away the sample data</p>
+	</li>
+	<li>
+	<p>make inferences based on the known distribution</p>
+
+	<p>…</p>
+	</li>
+	<li>
+	<p>(steal underwear)</p>
+	</li>
+	<li>
+	<p>PROFIT!</p>
+	</li>
+</ol>
+
+<p>Those practices continue today. It’s amazing how many <a href="http://lolmythesis.com/">dissertations</a> are chock full of <a href="http://mathworld.wolfram.com/P-Value.html">p-values</a>, and literature surveys, and not much else. For that matter, much of the practice of <a href="http://en.wikipedia.org/wiki/Business_intelligence">business intelligence</a> emerged from a similar mindset. That conceptual lens places immense pressure on data models to be “correct”, while ignoring much of the data. Caveat emptor.</p>
+
+<h2>The Two Cultures</h2>
+
+<p>In 2001, a Statistics professor at UC Berkeley named Leo Breiman made waves within academic circles by publishing <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.156.4933&amp;rep=rep1&amp;type=pdf">Statistical Modeling: The Two Cultures</a>. That paper – with a nod perhaps to <a href="http://en.wikipedia.org/wiki/The_Two_Cultures">C.P. Snow</a> – chronicled a sea change. As shown by the successes of Amazon, Google, etc., the industry had begun to shift away from <em>data modeling</em> (silos, manual process). Instead, as Breiman described it, there was increased use of <em>algorithmic modeling</em> (machine data, automation, machine learning), which in turn led to more inter-disciplinary teams:</p>
+
+<blockquote>
+<p>A new research community using these tools sprang up. Their goal was predictive accuracy. The community consisted of young computer scientists, physicists and engineers plus a few aging statisticians. They began using the new tools in working on complex prediction problems where it was obvious that data models were not applicable: speech recognition, image recognition, nonlinear time series prediction, handwriting recognition, prediction in financial markets.</p>
+</blockquote>
+
+<p>Check out section 7, <em>Algorithmic Modeling</em>, in the <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.156.4933&amp;rep=rep1&amp;type=pdf">Breiman paper</a>. The concept is simple: first, assume that Nature is messy, complex, mysterious, glorious in its diversity, and that specific data models are not particularly robust by comparison. Draw a “black box” around the problem, and add as many factors as make sense:</p>
+
+<blockquote>
+<p>What is observed is a set of <strong>x</strong>’s that go in and a subsequent set of <strong>y</strong>’s that come out.</p>
+</blockquote>
+
+<p>The challenge then is to develop a multiplicity of different models to predict the <strong>y</strong>’s – evoking <a href="http://en.wikipedia.org/wiki/Rashomon_effect">Rashomon</a>, to paraphrase Breiman. This practice of using multiple models is called <a data-original-title="" href="http://kdd13pmml.files.wordpress.com/2013/07/pattern.pdf" title="">ensembles</a>, and we’ll return to that a bit later.</p>
+
+<p>Somewhere in the late 1990s, a handful of very smart people began to automate the process of making educated guesses based on large amounts of data. Rather than isolating factors or isolating hypotheses, they leveraged algorithmic modeling, machine learning, ensembles, etc. They used the results for actionable insights in ecommerce: catalog, auction, search, ads, etc. Some entrepreneurs who led those efforts (Bezos, Omidyar, Brin, Page, et al.) became billionaires. Go figure.</p>
+
+<h2>Logical Positivism Smackdown</h2>
+
+<p>Putting ourselves in the shoes of someone running an ecommerce firm, let’s consider how best to create and update predictions based on algorithmic modeling.</p>
+
+<p>To make this concrete, let’s say that we’re selling pre-mixed cocktails online, ordered anywhere from a tablet or laptop or smartphone, and delivered via drone to an exact GPS coordinate. Drone-based delivery comes complete with an ID check, so that those of us with gray hair tend to tip extra. We’ll call this early-stage venture <em>Foobartendr.io</em>, if we can get the domain and perhaps a term sheet too.</p>
+
+<p>One problem is that customers only scan through a few images (say, a max of 4) before they click to order. Otherwise they leave and go on to something completely different. So we need to build classifiers (Breiman’s “black box”) to predict the best 4 cocktails to show. We will leverage whatever input signals are available – those are the <strong>x</strong>’s that go into our model: GPS coordinate, time of day, season of the year, what’s popular recently, order history for the customer if there is any, etc.</p>
+
+<p>In the context of data modeling, a standard approach would have been to pull a sample of customers who had already purchased cocktails from our service. Then we might conduct a survey among customers in the sample, to gauge their satisfaction. Then we’d come up with a model to rank the customer satisfaction per cocktail, and use those rankings to determine which cocktail images to show.</p>
+
+<p>There are several problems with that approach…</p>
+
+<ul>
+	<li>when new customers try out the service for the first time, we have no data about them</li>
+	<li>when a newly created cocktail first gets created, there’s no data about it</li>
+	<li>customers get tired of drones delivering the same old cocktail, and want to try something new</li>
+	<li>trends change, cocktails get featured in popular media, etc., so demand is always in flux</li>
+</ul>
+
+<p>…just to name a few. To wit, the data is always in flux. Patterns of customer demand are also changing. Analysts cannot work fast enough to keep up with all those changes. Besides, there probably are many kind of subtle interactions among the inputs that simply cannot be explained in isolation. More to the point, data modeling does not work in the context of an <em>early-stage</em> start-up which has neither customers nor data yet. How do we handle uncertainty, interactions, and updates effectively?</p>
+
+<blockquote> </blockquote>
+
+<p><a href="http://en.wikipedia.org/wiki/Thomas_Bayes">Thomas Bayes</a> was a mathematician and minister in Britain during the 1700s, elected as a Fellow into the Royal Society in 1742. He stated a list of postulates about conditional probability in <em>An Essay towards solving a Problem in the Doctrine of Chances</em>, published posthumously in 1763. The <a href="http://rstl.royalsocietypublishing.org/content/53/370">original</a> is available online; however, you may wish to read a <a href="http://www.stat.ucla.edu/history/essay.pdf">better transcription</a> instead:</p>
+
+<blockquote>
+<p><em>Given</em> the number of times ion which an unknown event has happende and failed: <em>Required</em> the chance that the probability of its happening in a single trial lies somewhere between any two degrees of probability that can be named.</p>
+</blockquote>
+
+<p>Bayes’ work was extended by <a href="http://www.cs.xu.edu/math/Sources/Laplace/index.html">Pierre Simon Laplace</a> decades later, becoming what is now known as <em>Bayes Theorem</em>, and used for inductive reasoning. Some mathematicians and philosophers have hailed that body of work as a monumental step forward. Others have criticized it as non-science and heresy. Within the Statistics community, one encounters a big divide between <em>Bayesian</em> and <em>Frequentist</em> approaches. Reading through the <em>Comment</em> and <em>Rejoinder</em> sections of the <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.156.4933&amp;rep=rep1&amp;type=pdf">Breiman paper</a>, a snapshot appears of this dispute among leading statisticians circa 2001.</p>
+
+<blockquote> </blockquote>
+
+<p>Back to our problem of ordering/delivering cocktails via tablet and drone – more specifically, how do we handle interactions and updates involving large amounts of data in an uncertain and changing context? Using a Bayesian approach, we can build a large distributed framework which applies algorithmic modeling and runs efficiently in parallel at scale on a cluster, streaming through large-scale data in real-time. Using a Frequentist approach, we’re stuck with hiring famous statistics professors as expensive consultants on unending projects. We might as well roll up the business and go sell insurance, while Jeff Bezos laughs all the way to the bank. Or something.</p>
+
+<p>Machine learning at scale and Bayesian approaches used together can work wonders at reversing the crippling effects of centuries of <a href="http://en.wikipedia.org/wiki/Aristotelianism">aristotelian</a> perspectives encumbering the academe. James Hawthorne articulated some key issues involved, in <a href="http://faculty-staff.ou.edu/H/James.A.Hawthorne-1/Hawthorne--Giving_Up_Judgment_Empiricism.pdf">Giving up Judgment Empiricism: The Bayesian Epistemology of Bertrand Russell and Grover Maxwell</a>. Hawthorne quoted Grover Maxwell brilliantly in his summary:</p>
+
+<blockquote>
+<p>Indeed, such inadequacies as we have seemed to find in empiricism have been discovered by strict adherence to a doctrine by which empiricist philosophy has been inspired: that all human knowledge is uncertain, inexact, and partial. To this doctrine we have not found any limitation whatever.</p>
+</blockquote>
+
+<p>To that point, <a href="http://plato.stanford.edu/entries/popper/#SciKnoHisPre">Karl Popper warned</a> that the Scientific Method itself has a habit of skimping on accountability for its predictions. Popper criticized at length against <em>unconditional scientific prophecies</em>, based on his infamous <code>[C.P. + E.S.] = U.P.</code> formula – not unlike how poorly-wielded analytics get abused so frequently in the corporate world. We could travel down a long maze of twisty little passages about <em>neopositivism</em>. Let’s not.</p>
+
+<h2>The Diachronic Interpretation</h2>
+
+<p>Instead, let’s take a good long look at a wonderfully pragmatic and useful book, <a href="http://www.greenteapress.com/thinkbayes/">Think Bayes</a> by Allen B. Downey. The book is highly recommended; however, you can get a copy of its <a href="http://www.greenteapress.com/thinkbayes/thinkbayes.pdf">text online</a>. Scroll down to section 1.5, <em>The diachronic interpretation</em>, for an excellent overview of Bayes Theorem:</p>
+
+<blockquote>
+<p>it gives us a way to update the probability of a hypothesis, <em>H</em>, in light of some body of data, <em>D</em>.</p>
+</blockquote>
+
+<p>The formula leverages <em>conditional probability</em> to infer based on what can be observed, in a way that is simple to update:</p>
+
+<pre data-original-title="" title="">
+<code>p(H|D) = p(H) * p(D|H) / p(D)
+</code></pre>
+
+<p>Translated from the math, the individual components of that formula for Bayes Theorem can be described as:</p>
+
+<dl>
+	<dt><em>posterior</em></dt>
+	<dd><code>p(H|D)</code> -- what we want to calculate</dd>
+	<dt><em>prior</em></dt>
+	<dd><code>p(H)</code> -- probability of the hypothesis <code>H</code> prior to learning about the data <code>D</code></dd>
+	<dt><em>likelihood</em></dt>
+	<dd><code>p(D|H)</code> -- probability of the data <code>D</code> under the hypothesis <code>H</code></dd>
+	<dt><em>normalizing constant</em></dt>
+	<dd><code>p(D)</code> -- probability of the data <code>D</code> under any hypothesis</dd>
+</dl>
+
+<p>That formula summarizes the best of Bayes, Laplace, Russell, Popper, Breiman, et al., into a conceptual framework that can be coded and automated into a highly parallelized, robust, adaptive distributed framework at scale. Bingo!</p>
+
+<p>Bayesian statistics represents a credence, a degree of belief in the probability of <code>H</code> occurring given that <code>D</code> happened. More than that, it incorporates a notion of change, iteration, updates. Downey explains:</p>
+
+<blockquote>
+<p>“Diachronic” means that something is happening over time; in this case the probability of the hypotheses changes, over time, as we see new data.</p>
+</blockquote>
+
+<p>Harkening back to our friends with data models, Frequentist notions of probability focus (read: <em>fixate</em>) on outcomes, and are not particularly good at taking time and change into account. Bayesian approaches excel at incorporating change over time. They do not necessarily provide the best <em>predictive power</em> in modeling – SVMs, Neural Nets, and Random Forests typically perform better. However, they are generally best at <em>transparency</em>: describing why particular features are being used in decisions. In particular, <a href="http://scikit-learn.org/stable/modules/naive_bayes.html">Naive Bayes</a> tends to provide great transparency into Breiman’s “black box” problem. That’s important when there are questions of accountability – e.g., when investors start asking uncomfortable questions about the technology our killer app uses for suggesting cocktails.</p>
+
+<p>Let’s take a look at an example from Section 1.3, <em>The cookie problem</em> in <a href="http://www.greenteapress.com/thinkbayes/thinkbayes.pdf">Downey</a>. There are two bowls o’ cookies. Some are vanilla and some are chocolate:</p>
+
+<table>
+	<colgroup>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+	</colgroup>
+	<thead>
+		<tr>
+			<th style="text-align:left;">container</th>
+			<th style="text-align:left;">vanilla</th>
+			<th style="text-align:left;">chocolate</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="text-align:left;">Bowl 1</td>
+			<td style="text-align:left;">30</td>
+			<td style="text-align:left;">10</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">Bowl 2</td>
+			<td style="text-align:left;">20</td>
+			<td style="text-align:left;">20</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Suppose that we’re running a special on <a href="http://www.yummly.com/recipes?q=cookies+and+cream+cocktail">Cookies and Cream Cocktails</a> at our <em>Foobartendr.io</em> start-up, and we’re working on some quality assurance metrics. Given that we’ve pulled a vanilla cookie from one of the bowls, we need to calculate the probability that it came from either bowl. In other words, pulling the vanilla cookie becomes the observed data <code>D</code>, a specific bowl is a hypothesis <code>H</code>, and <code>p(D|H)</code> represents the likelihood of pulling a vanilla cookie from each of the bowls. Then we use Bayes Theorem to calculate the posterior probability <code>p(H|D)</code> for each of the bowls.</p>
+<img alt="cookie bowls" src="img/cookies.jpg"/>
+<p>Let’s write a simple Python script to calculate those probabilities based on Bayes Theorem. First, download the Python module <a href="http://www.greenteapress.com/thinkbayes/thinkbayes.py">thinkbayes.py</a> from Downey’s web site. Then we create a new Python script named <code>cookie.py</code> in that same directory, based on using an instance of the <code>Pmf</code> class:</p>
+
+<pre data-original-title="" title="">
+<code>from thinkbayes import Pmf
+pmf = Pmf()
+</code></pre>
+
+<p>Next, we define two hypotheses <em>H1</em> and <em>H2</em> – one for each bowl, respectively. The priors are <code>1/2</code> for both hypotheses, in other words a uniform distribution. We set the priors using the following calls:</p>
+
+<pre>
+<code>pmf.Set("H1", 1 / 2.0)
+pmf.Set("H2", 1 / 2.0)
+</code></pre>
+
+<p>Next, we update with <code>p(D|H)</code> as the likelihood of pulling a vanilla cookie from each of the bowls:</p>
+
+<pre>
+<code>pmf.Mult("H1", 30 / 40.0)
+pmf.Mult("H2", 20 / 40.0)
+</code></pre>
+
+<p>Finally, we renormalize the data and report the posterior for both hypotheses:</p>
+
+<pre>
+<code>pmf.Normalize()
+
+for bowl in ["H1", "H2"]:
+    print bowl, pmf.Prob(bowl)
+</code></pre>
+
+<p>Saving this code to a script called <code>cookie.py</code> and running it:</p>
+
+<pre>
+<code>$ python cookie.py
+H1 0.6
+H2 0.4
+</code></pre>
+
+<p>The results show that the posterior probability for the Bowl 1 and Bowl 2 hypotheses are <code>0.6</code> and <code>0.4</code> respectively. Meanwhile, Downey has lots more examples shared on his blog, such as <a href="http://allendowney.blogspot.com/2011/10/all-your-bayes-are-belong-to-us.html">All Your Bayes Are Belong To Us</a>. Recommended reading!</p>
+
+<h2>Eight Little Numbers</h2>
+
+<p>Let’s put some Bayesian inference into practice, in the context of building a Data Science team. In a <a href="http://theleanstartup.com/">customer experiment</a> at our early-stage venture <em>Foobartendr.io</em>, we tested four different UI designs for arranging the display of the top 4 cocktails. We measured how frequently customers purchased cocktails, based on each of those designs. Here are the test results:</p>
+
+<table>
+	<colgroup>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+	</colgroup>
+	<thead>
+		<tr>
+			<th style="text-align:left;">test ID</th>
+			<th style="text-align:left;">#visits</th>
+			<th style="text-align:left;">#purchases</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="text-align:left;">#1</td>
+			<td style="text-align:left;">24</td>
+			<td style="text-align:left;">3</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">#2</td>
+			<td style="text-align:left;">180</td>
+			<td style="text-align:left;">30</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">#3</td>
+			<td style="text-align:left;">250</td>
+			<td style="text-align:left;">50</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">#4</td>
+			<td style="text-align:left;">100</td>
+			<td style="text-align:left;">15</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Let’s use this data as an interview question for Data Scientist candidates. Or, for that matter, all of the engineering and management candidates in the company. Questions:</p>
+
+<ol>
+	<li>Can you tell us which version has the lowest purchase rate?</li>
+	<li>Why did you give that answer?</li>
+	<li>How did you calculate it?</li>
+</ol>
+
+<p>This is an open-book test. Follow best practices for data analysis. Make your own choices about how to arrive at a decision with a reasonable degree of accuracy. Feel free to use a calculator, laptop, web browser, supercomputer, phone calls to Nobel laureate in-laws, etc. However, take no more than 5 minutes, max.</p>
+
+<blockquote> </blockquote>
+
+<p>Data for this question was constructed so that:</p>
+
+<ul>
+	<li>relevant calculations can be performed easily, by hand</li>
+	<li>the question could be used for a phone screening interview</li>
+	<li>candidates with stats background tend to take 5 minutes or less</li>
+	<li>candidates who lack applied math skills may struggle for much longer</li>
+</ul>
+
+<p>Results are easy to score, and that can be done interactively with the candidate during the interview. One reasonable solution would be to consider those eight little numbers as <a href="http://en.wikipedia.org/wiki/Point_estimation">point estimates</a>. In that case, an <a href="http://www.measuringusability.com/wald.htm">Adjusted Wald method</a>, or other similar approaches can be used to construct a <em>confidence interval</em> around a point estimate <code>p</code>:</p>
+
+<pre>
+<code>adjusted p =  (x + 2) / (n + 4)
+95% confidence interval =  ± 1.96 * sqrt(p * (1 - p) / n)
+</code></pre>
+
+<p>Note the <code>2</code> in the numerator and the <code>4</code> in the denominator. Those represent a Bayesian practice called <em>shrinkage</em> – which <a href="http://www.cs.xu.edu/math/Sources/Laplace/index.html">Laplace</a> used infamously to describe the probability of the sun rising tomorrow. In other words, the ratio of those values <code>2 / 4 = 0.5</code> serves as the <em>prior</em> in this case.</p>
+
+<blockquote> </blockquote>
+
+<p>Try using the <a href="http://www.measuringusability.com/wald.htm">Confidence Interval Calculator</a> on our data:</p>
+
+<table>
+	<colgroup>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+	</colgroup>
+	<thead>
+		<tr>
+			<th style="text-align:left;">test ID</th>
+			<th style="text-align:left;">#visits</th>
+			<th style="text-align:left;">#purchases</th>
+			<th style="text-align:left;">lower bounds</th>
+			<th style="text-align:left;">point estimate</th>
+			<th style="text-align:left;">upper bounds</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="text-align:left;">#1</td>
+			<td style="text-align:left;">24</td>
+			<td style="text-align:left;">3</td>
+			<td style="text-align:left;">0.0351</td>
+			<td style="text-align:left;">0.1538</td>
+			<td style="text-align:left;">0.3184</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">#2</td>
+			<td style="text-align:left;">180</td>
+			<td style="text-align:left;">30</td>
+			<td style="text-align:left;">0.1189</td>
+			<td style="text-align:left;">0.1703</td>
+			<td style="text-align:left;">0.2284</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">#3</td>
+			<td style="text-align:left;">250</td>
+			<td style="text-align:left;">50</td>
+			<td style="text-align:left;">0.1549</td>
+			<td style="text-align:left;">0.2024</td>
+			<td style="text-align:left;">0.2542</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">#4</td>
+			<td style="text-align:left;">100</td>
+			<td style="text-align:left;">15</td>
+			<td style="text-align:left;">0.0919</td>
+			<td style="text-align:left;">0.1569</td>
+			<td style="text-align:left;">0.2340</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>In short, the confidence intervals overlap so there’s no clear winner. We’ll need to keep running customer experiments on our cocktail promotions until we get more data.</p>
+
+<blockquote> </blockquote>
+
+<p>For engineering candidates, we’ll accept the answer “No”, or “I don’t know” – with extra credit given for those who mention about calculating variance, confidence intervals, or point estimates. However, if a candidate answers “Yes” then we’ll ask why, and drill-down on the answers. If they argue the “Yes” answer, we’ll become cautious about their other interview responses.</p>
+
+<p>For managment candidates, if they argue the “Yes” case, we’ll conclude the interview. Do we really want that approach to decision making on board? We might was as well hire the ghost of Aristotle.</p>
+
+<h2>Corollary: Regularization</h2>
+
+<p>Alternatively, we could have used a Bayesian approach to calculate <a href="http://www.causascientia.org/math_stat/ProportionCI.html">confidence limits</a>. That produces results comparable to the Adjusted Wald method. Frankly, the amount of <a href="http://www.stat.duke.edu/courses/Spring08/sta103/apr7/binomci.pdf">math dedicated to point estimates and intervals</a> is a bit intimidating, but the actionable insights are clear. In general, most Machine Learning algorithms employ some kind of <a href="http://en.wikipedia.org/wiki/Bayesian_interpretation_of_regularization">regularization term</a> to avoid <em>overfitting</em>. That’s the big idea here.</p>
+
+<p>William Chen provided an answer that cuts straight to this point on the Quora question <a href="http://www.quora.com/Big-Data/What-are-the-advantages-of-Bayesian-methods-over-frequentist-methods-in-web-data">What are the advantages of Bayesian methods over frequentist methods in web data?</a></p>
+
+<blockquote>
+<p>Bayesian methods allow us to use priors to help with regularization.</p>
+</blockquote>
+
+<p>In that problem, Bert and Ernie are two hypothetical Quora who both have <em>upvotes</em> and <em>downvotes</em> on their answers. The problem is to rank users based on these votes. Using a Frequentist approach, Bert wins – even though he has less history. Those results don’t pass the smell test. To correct the results, Chen uses a <code>Beta(1, 1)</code> prior – effectively, shrinkage that adds <code>1</code> to both the numerator and denominator in the proportions data:</p>
+
+<table>
+	<colgroup>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+		<col style="text-align:left;"/>
+	</colgroup>
+	<thead>
+		<tr>
+			<th style="text-align:left;">user</th>
+			<th style="text-align:left;">upvote</th>
+			<th style="text-align:left;">downvote</th>
+			<th style="text-align:left;">frequentist estimate</th>
+			<th style="text-align:left;">bayesian estimate</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td style="text-align:left;">Bert</td>
+			<td style="text-align:left;">2</td>
+			<td style="text-align:left;">0</td>
+			<td style="text-align:left;">2/(0 + 2) = 1.0</td>
+			<td style="text-align:left;">3/(3 + 1) = 0.75</td>
+		</tr>
+		<tr>
+			<td style="text-align:left;">Ernie</td>
+			<td style="text-align:left;">45</td>
+			<td style="text-align:left;">5</td>
+			<td style="text-align:left;">45/( 5 + 45) = 0.9</td>
+			<td style="text-align:left;">46/(6 + 46) = 0.88</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Ernie then ranks above Bert. Life is good.</p>
+
+<blockquote> </blockquote>
+
+<hr/>
+<h2>Key Points</h2>
+
+<p><strong>TODO</strong></p>
+
+<ul>
+	<li>Bayesian methods allow us to use priors to help with regularization</li>
+	<li>streaming through large amounts of data, without having to wait for a batch window</li>
+</ul>
+
+<h2>Suggested Books</h2>
+
+<p><em>Think Bayes</em><br/>
+by Allen B. Downey (2013)<br/>
+http://amazon.com/dp/1449370780</p>
+
+<h2>Exercises</h2>
+
+<ol>
+	<li>Write a Python script to analyze the <em>Eight Little Numbers</em> data, using the concepts presented in this chapter.</li>
+</ol>
+</section>
+  </body>
+</html>
